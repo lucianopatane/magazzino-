@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Magazzino 2.0</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f5f7;font-family:Arial,sans-serif;color:#17202a}
+header{background:#1769aa;color:white;padding:20px 18px}.title{font-size:27px;font-weight:800}.sub{opacity:.85;margin-top:4px}
+main{padding:14px;max-width:700px;margin:auto}.card{background:white;border-radius:16px;margin:10px 0;padding:16px;box-shadow:0 2px 8px #0001}
+.item{display:grid;grid-template-columns:1fr 70px 90px;gap:8px;align-items:center}.name{font-size:18px;font-weight:700}
+.lbl{display:block;font-size:11px;color:#667085}.val{font-size:18px;font-weight:700}
+button{width:100%;border:0;border-radius:12px;padding:14px;font-size:17px;font-weight:700;margin-top:9px}
+.blue{background:#1769aa;color:white}.green{background:#1f9d55;color:white}.red{background:#d64545;color:white}.purple{background:#6c5ce7;color:white}.gray{background:#e5e9ed}
+.empty{text-align:center;padding:45px 10px;color:#667085}
+.modal{display:none;position:fixed;inset:0;background:#0008;align-items:flex-end}.modal.show{display:flex}.sheet{background:white;width:100%;border-radius:20px 20px 0 0;padding:20px;max-height:92vh;overflow:auto}.close{float:right;width:42px;margin:0;background:#eee}.stat{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat div{background:#f3f5f7;padding:14px;border-radius:12px;text-align:center}
+input{width:100%;padding:13px;border:1px solid #ccd3da;border-radius:10px;font-size:17px;margin:6px 0}
+.history{font-size:14px}.history div{padding:9px 0;border-bottom:1px solid #eee}
+</style></head>
+<body>
+<header><div class="title">📦 MAGAZZINO 2.0</div><div class="sub">Giacenze</div></header>
+<main>
+<div class="card" style="text-align:center"><b>Questa pagina è solo di consultazione</b><br><span style="font-size:13px;color:#667085">Per modificare un articolo devi entrare nella sua scheda.</span></div>
+<div id="list"></div>
+<button class="blue" onclick="newItem()">🎤 AGGIUNGI NUOVO ARTICOLO</button>
+</main>
+<div id="modal" class="modal"><div class="sheet"><button class="close" onclick="closeM()">×</button><div id="body"></div></div></div>
+<script>
+let a=JSON.parse(localStorage.getItem('m20')||'[]'),sel=0;
+function save(){localStorage.setItem('m20',JSON.stringify(a));render()}
+function render(){let l=document.getElementById('list');if(!a.length){l.innerHTML='<div class="card empty"><div style="font-size:50px">📦</div><h2>Magazzino vuoto</h2><p>Qui compariranno i tuoi articoli.</p></div>'}else{l.innerHTML=a.map((x,i)=>`<div class="card" onclick="openA(${i})"><div class="item"><div class="name">${x.n}</div><div><span class="lbl">Rotoli</span><span class="val">${x.r}</span></div><div><span class="lbl">Metri</span><span class="val">${x.m}</span></div></div></div>`).join('')}}
+function newItem(){document.getElementById('body').innerHTML='<h2>Nuovo articolo</h2><p>Il nome si può inserire con voce oppure scrivere.</p><input id="n" placeholder="Nome articolo"><button class="green" onclick="add()">Aggiungi</button><button class="purple" onclick="voice()">🎤 Usa voce</button><button class="gray" onclick="closeM()">Annulla</button>';show()}
+function voice(){if(!('webkitSpeechRecognition'in window)){alert('Il browser del telefono non supporta il comando vocale in questa demo.');return}let r=new webkitSpeechRecognition();r.lang='it-IT';r.onresult=e=>{document.getElementById('n').value=e.results[0][0].transcript};r.start()}
+function add(){let n=document.getElementById('n').value.trim();if(!n)return; if(a.some(x=>x.n.toLowerCase()==n.toLowerCase()))return alert('Articolo già presente');a.push({n,r:0,m:0,h:[]});save();closeM()}
+function openA(i){sel=i;let x=a[i];document.getElementById('body').innerHTML=`<h2>${x.n}</h2><div class="stat"><div><span class="lbl">ROTOLI</span><b>${x.r}</b></div><div><span class="lbl">METRI LINEARI</span><b>${x.m}</b></div></div><button class="green" onclick="mov('Carico')">📥 CARICO</button><button class="red" onclick="mov('Scarico')">📤 SCARICO</button><button class="purple" onclick="editName()">✏️ RINOMINA</button><button class="gray" onclick="closeM()">CHIUDI</button><h3>Storico</h3><div class="history">${x.h.length?x.h.map(v=>`<div>${v}</div>`).join(''):'<div>Nessuna movimentazione</div>'}</div>`;show()}
+function mov(t){let r=parseInt(prompt('Quanti rotoli?','0')||0),m=parseFloat(prompt('Quanti metri lineari?','0')||0);if(t==='Scarico'&&(r>a[sel].r||m>a[sel].m))return alert('Giacenza insufficiente');a[sel].r += t==='Carico'?r:-r;a[sel].m += t==='Carico'?m:-m;a[sel].h.unshift(`${new Date().toLocaleString()} - ${t}: ${r} rotoli, ${m} m`);save();openA(sel)}
+function voiceMov(){alert('Esempio: “Carico 2 rotoli e 50 metri”. Nel telefono Android questa funzione sarà integrata nella versione APK.')}
+function editName(){let n=prompt('Nuovo nome:',a[sel].n);if(n&&n.trim()){a[sel].n=n.trim();save();openA(sel)}}
+function show(){document.getElementById('modal').classList.add('show')}function closeM(){document.getElementById('modal').classList.remove('show')}
+render()
+</script></body></html>
